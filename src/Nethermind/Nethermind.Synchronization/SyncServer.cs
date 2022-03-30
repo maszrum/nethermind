@@ -331,7 +331,7 @@ namespace Nethermind.Synchronization
                 if (!_blockTree.IsKnownBlock(number, hash))
                 {
                     _logger.Info($"refreshing total difficulty");
-                    _pool.RefreshTotalDifficulty(syncPeer, hash);
+                    _pool.RefreshTotalDifficulty(syncPeer);
                 }
             }
         }
