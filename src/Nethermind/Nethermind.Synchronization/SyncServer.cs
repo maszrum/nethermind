@@ -313,7 +313,7 @@ namespace Nethermind.Synchronization
             
             if (number > syncPeer.HeadNumber)
             {
-                _logger.Info($"HINT Updating header of {syncPeer} from {syncPeer.HeadNumber} {syncPeer.TotalDifficulty} to {number}");
+                _logger.Info($"HINT Updating header of {syncPeer} from {syncPeer.HeadNumber} {syncPeer.TotalDifficulty} to {number}.");
                 syncPeer.HeadNumber = number;
                 syncPeer.HeadHash = hash;
 
@@ -330,9 +330,16 @@ namespace Nethermind.Synchronization
 
                 if (!_blockTree.IsKnownBlock(number, hash))
                 {
-                    _logger.Info($"refreshing total difficulty");
                     _pool.RefreshTotalDifficulty(syncPeer);
                 }
+                else
+                {
+                    if (_logger.IsInfo) _logger.Info($"HINT Not updating header of {syncPeer} from {syncPeer.HeadNumber} {syncPeer.TotalDifficulty} to {number}, block already known.");
+                }
+            }
+            else
+            {
+                if (_logger.IsInfo) _logger.Info($"HINT Not updating header of {syncPeer} from {syncPeer.HeadNumber} {syncPeer.TotalDifficulty} to {number}.");
             }
         }
 
