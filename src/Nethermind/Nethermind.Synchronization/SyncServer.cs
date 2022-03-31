@@ -332,7 +332,7 @@ namespace Nethermind.Synchronization
                 {
                     _pool.RefreshTotalDifficulty(syncPeer, hash);
                 }
-                else
+                // else
                 {
                     if (_logger.IsInfo) _logger.Info($"HINT Not updating header of {syncPeer} from {syncPeer.HeadNumber} {syncPeer.TotalDifficulty} to {number}, block already known.");
                 }
