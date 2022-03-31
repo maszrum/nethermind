@@ -233,13 +233,14 @@ namespace Nethermind.Network.P2P.Subprotocols.Eth.V62
             }
             catch (Exception e)
             {
-                if (Logger.IsDebug) Logger.Debug($"Handling {msg} from {Node:c} failed: " + e.Message);
+                Logger.Info($"Handling {msg} from {Node:c} failed: " + e.Message);
                 throw;
             }
         }
 
         public override void NotifyOfNewBlock(Block block, SendBlockPriority priority)
         {
+            Logger.Info("DEBUGGING we are in NotifyOfNewBlock");
             switch (priority)
             {
                 case SendBlockPriority.High:
@@ -263,7 +264,7 @@ namespace Nethermind.Network.P2P.Subprotocols.Eth.V62
                 throw new InvalidOperationException($"Trying to send a block {block.Hash} with null total difficulty");
             }
 
-            if (Logger.IsTrace) Logger.Trace($"OUT {Counter:D5} NewBlock to {Node:c}");
+            Logger.Info($"OUT {Counter:D5} NewBlock to {Node:c}");
 
             NewBlockMessage msg = new();
             msg.Block = block;
@@ -274,7 +275,7 @@ namespace Nethermind.Network.P2P.Subprotocols.Eth.V62
 
         private void HintNewBlock(Keccak blockHash, long number)
         {
-            if (Logger.IsTrace) Logger.Trace($"OUT {Counter:D5} HintBlock to {Node:c}");
+            Logger.Info($"OUT {Counter:D5} HintBlock to {Node:c}");
 
             NewBlockHashesMessage msg = new((blockHash, number));
             Send(msg);
