@@ -21,7 +21,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using ConcurrentCollections;
 using Nethermind.Blockchain;
 using Nethermind.Blockchain.Find;
 using Nethermind.Blockchain.Synchronization;
@@ -51,9 +50,6 @@ namespace Nethermind.Synchronization.Peers
         private readonly IBlockTree _blockTree;
         private readonly ILogger _logger;
         private readonly BlockingCollection<RefreshTotalDiffTask> _peerRefreshQueue
-            = new();
-        
-        private readonly ConcurrentHashSet<RefreshTotalDiffTask> _peerRefreshTasks 
             = new();
 
         private readonly ConcurrentDictionary<PublicKey, PeerInfo> _peers
@@ -232,18 +228,10 @@ namespace Nethermind.Synchronization.Peers
         public int InitializedPeersCount => InitializedPeers.Count();
         public int PeerMaxCount { get; }
 
-        public void RefreshTotalDifficulty(ISyncPeer syncPeer, Keccak? blockHash = null)
+        public void RefreshTotalDifficulty(ISyncPeer syncPeer, Keccak blockHash)
         {
-            RefreshTotalDiffTask task = blockHash is null ? new(syncPeer) : new(blockHash, syncPeer);
-            SchedulePeerRefresh(task);
-        }
-
-        private void SchedulePeerRefresh(RefreshTotalDiffTask task)
-        {
-            if (_peerRefreshTasks.Add(task))
-            {
-                _peerRefreshQueue.Add(task);
-            }
+            RefreshTotalDiffTask task = new(blockHash, syncPeer);
+            _peerRefreshQueue.Add(task);
         }
 
         public void AddPeer(ISyncPeer syncPeer)
@@ -267,7 +255,7 @@ namespace Nethermind.Synchronization.Peers
 
             if (_logger.IsDebug) _logger.Debug($"Adding {syncPeer.Node:c} to refresh queue");
             if (NetworkDiagTracer.IsEnabled) NetworkDiagTracer.ReportInterestingEvent(syncPeer.Node.Address, "adding node to refresh queue");
-            SchedulePeerRefresh(new RefreshTotalDiffTask(syncPeer));
+            _peerRefreshQueue.Add(new RefreshTotalDiffTask(syncPeer));
         }
 
         public void RemovePeer(ISyncPeer syncPeer)
@@ -414,8 +402,6 @@ namespace Nethermind.Synchronization.Peers
                     initCancelSource.Dispose();
                     linkedSource.Dispose();
                 });
-                
-                _peerRefreshTasks.TryRemove(refreshTask);
             }
 
             if (_logger.IsInfo) _logger.Info("Exiting sync peer refresh loop");
@@ -649,7 +635,7 @@ namespace Nethermind.Synchronization.Peers
             }
         }
 
-        private class RefreshTotalDiffTask : IEquatable<RefreshTotalDiffTask>
+        private class RefreshTotalDiffTask
         {
             public RefreshTotalDiffTask(ISyncPeer syncPeer)
             {
@@ -665,23 +651,6 @@ namespace Nethermind.Synchronization.Peers
             public Keccak? BlockHash { get; }
 
             public ISyncPeer SyncPeer { get; }
-
-            public bool Equals(RefreshTotalDiffTask? other)
-            {
-                if (ReferenceEquals(null, other)) return false;
-                if (ReferenceEquals(this, other)) return true;
-                return Equals(BlockHash, other.BlockHash) && SyncPeer.Equals(other.SyncPeer);
-            }
-
-            public override bool Equals(object? obj)
-            {
-                if (ReferenceEquals(null, obj)) return false;
-                if (ReferenceEquals(this, obj)) return true;
-                if (obj.GetType() != GetType()) return false;
-                return Equals((RefreshTotalDiffTask)obj);
-            }
-
-            public override int GetHashCode() => HashCode.Combine(BlockHash, SyncPeer);
         }
 
         public void Dispose()
