@@ -619,7 +619,15 @@ namespace Nethermind.Synchronization.Peers
         {
             if (PassBlockHint)
             {
-                _blockTree.SuggestHeader(header);
+                _logger.Info($"uncleHash: {header.UnclesHash}, equal empty: {header.UnclesHash == Keccak.OfAnEmptySequenceRlp}, TxRoot: {header.TxRoot}, equal empty: {header.TxRoot == Keccak.EmptyTreeHash}");
+                if (header.UnclesHash == Keccak.OfAnEmptySequenceRlp && header.TxRoot == Keccak.EmptyTreeHash)
+                {
+                    _blockTree.SuggestBlock(new Block(header));
+                }
+                else
+                {
+                    _blockTree.SuggestHeader(header);
+                }
                 foreach (PeerInfo peer in AllPeers)
                 {
                     peer.SyncPeer.NotifyOfNewBlock(header.Hash!, header.Number);
