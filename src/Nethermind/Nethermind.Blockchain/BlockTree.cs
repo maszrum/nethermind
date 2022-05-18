@@ -1623,7 +1623,10 @@ namespace Nethermind.Blockchain
             }
 
             ChainLevelInfo level = LoadLevel(number);
-            return level is not null && FindIndex(blockHash, level).HasValue;
+            if (level is null)
+                return false;
+            int? index = FindIndex(blockHash, level);
+            return index.HasValue && level.HasNonBeaconBlocks;
         }
 
         public bool IsKnownBeaconBlock(long number, Keccak blockHash)
@@ -1639,7 +1642,10 @@ namespace Nethermind.Blockchain
             }
 
             ChainLevelInfo level = LoadLevel(number);
-            return level is not null && FindIndex(blockHash, level).HasValue;
+            if (level is null)
+                return false;
+            int? index = FindIndex(blockHash, level);
+            return index.HasValue && level.HasBeaconBlocks;
         }
 
         private void UpdateDeletePointer(Keccak? hash)
