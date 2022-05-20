@@ -169,9 +169,9 @@ namespace Nethermind.Synchronization.FastBlocks
             PostFinishCleanUp();
         }
         
-        protected void PostFinishCleanUp()
+        protected virtual void PostFinishCleanUp()
         {
-            HeadersSyncProgressReport.Update(_pivotNumber);
+            HeadersSyncProgressReport.Update(_pivotNumber - HeadersDestinationNumber);
             HeadersSyncProgressReport.MarkEnd();
             _dependencies.Clear(); // there may be some dependencies from wrong branches
             _pending.Clear(); // there may be pending wrong branches

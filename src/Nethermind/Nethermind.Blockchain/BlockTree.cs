@@ -616,12 +616,12 @@ namespace Nethermind.Blockchain
             bool addBeaconMetadata = (options & BlockTreeInsertOptions.AddBeaconMetadata) != 0;
             if (addBeaconMetadata)
             {
-                blockInfo.Metadata = blockInfo.Metadata | BlockMetadata.BeaconHeader;
+                blockInfo.Metadata |= BlockMetadata.BeaconHeader;
             }
             bool moveToBeaconMainChain = (options & BlockTreeInsertOptions.MoveToBeaconMainChain) != 0;
             if (moveToBeaconMainChain)
             {
-                blockInfo.Metadata = blockInfo.Metadata | BlockMetadata.BeaconMainChain;
+                blockInfo.Metadata |= BlockMetadata.BeaconMainChain;
             }
             
             ChainLevelInfo chainLevel = new(isOnMainChain, blockInfo);
@@ -646,6 +646,11 @@ namespace Nethermind.Blockchain
             if (block.Number == 0)
             {
                 throw new InvalidOperationException("Genesis block should not be inserted.");
+            }
+
+            if (FindBlock(block.Hash ?? block.CalculateHash(), BlockTreeLookupOptions.TotalDifficultyNotNeeded) != null)
+            {
+                return AddBlockResult.AlreadyKnown;
             }
 
             // if we carry Rlp from the network message all the way here then we could solve 4GB of allocations and some processing

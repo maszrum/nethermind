@@ -98,6 +98,17 @@ public sealed class BeaconHeadersSyncFeed : HeadersSyncFeed
         PostFinishCleanUp();
     }
 
+    protected override void PostFinishCleanUp()
+    {
+        HeadersSyncProgressReport.Update(_pivotNumber - HeadersDestinationNumber + 1);
+        HeadersSyncProgressReport.MarkEnd();
+        _dependencies.Clear(); // there may be some dependencies from wrong branches
+        _pending.Clear(); // there may be pending wrong branches
+        _sent.Clear(); // we my still be waiting for some bad branches
+        _syncReport.HeadersInQueue.Update(0L);
+        _syncReport.HeadersInQueue.MarkEnd();
+    }
+
     protected override AddBlockResult InsertToBlockTree(BlockHeader header)
     {
         if (_logger.IsTrace)
