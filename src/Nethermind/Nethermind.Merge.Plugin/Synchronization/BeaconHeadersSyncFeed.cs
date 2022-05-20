@@ -37,11 +37,12 @@ public sealed class BeaconHeadersSyncFeed : HeadersSyncFeed
     private readonly IPivot _pivot;
     private readonly IMergeConfig _mergeConfig;
     private readonly ILogger _logger;
+    private bool _chainMerged;
     protected override long HeadersDestinationNumber => _pivot.PivotDestinationNumber;
 
     protected override bool AllHeadersDownloaded => (_blockTree.LowestInsertedBeaconHeader?.Number ?? long.MaxValue) <=
-                                                    _pivot.PivotDestinationNumber;
-
+                                                    _pivot.PivotDestinationNumber || _chainMerged;
+    
     protected override BlockHeader? LowestInsertedBlockHeader => _blockTree.LowestInsertedBeaconHeader;
     protected override MeasuredProgress HeadersSyncProgressReport => _syncReport.BeaconHeaders;
 
@@ -112,21 +113,15 @@ public sealed class BeaconHeadersSyncFeed : HeadersSyncFeed
             options |= BlockTreeInsertOptions.TotalDifficultyNotNeeded;
         }
 
-        AddBlockResult insertOutcome = _blockTree.IsKnownBlock(header.Number, header.Hash)
-            ? AddBlockResult.AlreadyKnown
-            : _blockTree.Insert(header, options);
         // Found existing block in the block tree
-        if (insertOutcome == AddBlockResult.AlreadyKnown)
+        if (_blockTree.IsKnownBlock(header.Number, header.Hash))
         {
-            // if (_blockTree.LowestInsertedHeader != null
-            //     && _blockTree.LowestInsertedHeader.Number < (_blockTree.LowestInsertedBeaconHeader?.Number ?? long.MaxValue))
-            // {
-            if (_logger.IsTrace)
-                _logger.Trace(
-                    " BeaconHeader LowestInsertedBeaconHeader found existing chain in fast sync," +
-                    $"old: {_blockTree.LowestInsertedBeaconHeader?.Number}, new: {_blockTree.LowestInsertedHeader.Number}");
-            // beacon header set to (global) lowest inserted header
-            //   _blockTree.LowestInsertedBeaconHeader = _blockTree.LowestInsertedHeader;
+            if (_blockTree.LowestInsertedBeaconHeader?.ParentHash == header.Hash || _chainMerged)
+            {
+                _chainMerged = true;
+                return AddBlockResult.AlreadyKnown;
+            }
+
             if (header.Number < (_blockTree.LowestInsertedBeaconHeader?.Number ?? long.MaxValue))
             {
                 if (_logger.IsTrace)
@@ -134,10 +129,9 @@ public sealed class BeaconHeadersSyncFeed : HeadersSyncFeed
                         $"LowestInsertedBeaconHeader AlreadyKnown changed, old: {_blockTree.LowestInsertedBeaconHeader?.Number}, new: {header?.Number}");
                 _blockTree.LowestInsertedBeaconHeader = header;
             }
-            //}
         }
 
-
+        AddBlockResult insertOutcome = _blockTree.Insert(header, options);
         if (insertOutcome == AddBlockResult.Added || insertOutcome == AddBlockResult.AlreadyKnown)
         {
             _nextHeaderHash = header.ParentHash!;
