@@ -54,7 +54,7 @@ public partial class BlockDownloaderTests
             .WithBlockTrees(4, (int)headNumber + 1)
             .InsertBeaconPivot(16)
             .InsertHeaders(4, 16)
-            .InsertBeaconBlocks(16, insertedBeaconBlocks, BlockTreeTests.BlockTreeTestScenario.ScenarioBuilder.TotalDifficultyMode.Null);
+            .InsertBeaconBlocks(17, insertedBeaconBlocks, BlockTreeTests.BlockTreeTestScenario.ScenarioBuilder.TotalDifficultyMode.Null);
         BlockTree notSyncedTree = blockTrees.NotSyncedTree;
         BlockTree syncedTree = blockTrees.SyncedTree;
         Context ctx = new(notSyncedTree);
@@ -107,7 +107,7 @@ public partial class BlockDownloaderTests
             .WithBlockTrees(4, (int)headNumber + 1)
             .InsertBeaconPivot(16)
             .InsertHeaders(4, 16)
-            .InsertBeaconBlocks(16, headNumber, BlockTreeTests.BlockTreeTestScenario.ScenarioBuilder.TotalDifficultyMode.Null);
+            .InsertBeaconBlocks(17, headNumber, BlockTreeTests.BlockTreeTestScenario.ScenarioBuilder.TotalDifficultyMode.Null);
         BlockTree notSyncedTree = blockTrees.NotSyncedTree;
         BlockTree syncedTree = blockTrees.SyncedTree;
         Context ctx = new(notSyncedTree);

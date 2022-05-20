@@ -106,7 +106,8 @@ public class ChainLevelHelper : IChainLevelHelper
         if (startingPoint == null)
             return null;
         List<Block> blocks = new(maxCount);
-        int i = 0;
+        int i = 1;
+        startingPoint++;
         while (i < maxCount)
         {
             ChainLevelInfo? level = _blockTree.FindLevel(startingPoint!.Value);
