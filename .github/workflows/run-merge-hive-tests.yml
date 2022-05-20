@@ -1,7 +1,22 @@
 name: '[RUN] Merge Hive Tests'
 on: 
   push:
-    branches: [ kiln ]
+    branches: 
+      - kiln
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: 'Docker hub org and repository name'
+        required: true
+        default: 'nethermindeth/nethermind'
+      tag:
+        description: 'Tag for the docker image'
+        required: true
+        default: ''
+      dockerfile:
+        description: 'Dockerfile to use'
+        required: false
+        default: 'Dockerfile'
 jobs:
   build-dockers:
     runs-on: ubuntu-latest
@@ -10,6 +25,12 @@ jobs:
         uses: actions/checkout@v2
       - name: Unshallow fetching
         run: git fetch --unshallow
+      - name: Settings
+        id: settings
+        run: |
+          echo ::set-output name=TAG::${{ github.event.inputs.tag }}
+          echo ::set-output name=dockerfile::${{ github.event.inputs.dockerfile }}
+          echo ::set-output name=docker_image::${{ github.event.inputs.repo }}
       - name: Setting up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Setting up Docker Buildx
@@ -18,8 +39,8 @@ jobs:
         uses: docker/build-push-action@v2
         with: 
           context: .
-          file: ./Dockerfile
-          tags: nethermind:kiln_shadowfork
+          file: ${{ steps.settings.outputs.dockerfile }}
+          tags: "${{ steps.settings.outputs.docker_image }}:${{ steps.settings.outputs.TAG }}"
           outputs: type=docker,dest=/tmp/image.tar
       - name: Installing Linux packages
         run: |
