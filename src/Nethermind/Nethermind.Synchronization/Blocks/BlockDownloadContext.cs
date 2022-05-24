@@ -96,6 +96,12 @@ namespace Nethermind.Synchronization.Blocks
             return hashesToRequest.ToList();
         }
 
+        public void SetBlock(int index, Block block)
+        {
+            int mappedIndex = _indexMapping[index];
+            Blocks[mappedIndex] = block;
+        }
+        
         public void SetBody(int index, BlockBody body)
         {
             int mappedIndex = _indexMapping[index];

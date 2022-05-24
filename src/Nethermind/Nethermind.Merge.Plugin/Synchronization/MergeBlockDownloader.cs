@@ -155,13 +155,13 @@ namespace Nethermind.Merge.Plugin.Synchronization
                 if (cancellation.IsCancellationRequested) return blocksSynced; // check before every heavy operation
                 if (downloadFinished)
                 {
-                    blocks = _chainLevelHelper.GetNextBlocks(requestSize);
+                    _chainLevelHelper.SetNextBlocks(requestSize, context);
                 }
                 else
                 {
                     await RequestBodies(bestPeer, cancellation, context);
-                    blocks = context.Blocks;
                 }
+                blocks = context.Blocks;
 
                 if (downloadReceipts)
                 {

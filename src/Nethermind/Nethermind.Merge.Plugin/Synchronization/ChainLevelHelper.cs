@@ -16,11 +16,14 @@
 // 
 
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Nethermind.Blockchain;
 using Nethermind.Blockchain.Synchronization;
 using Nethermind.Core;
+using Nethermind.Core.Crypto;
 using Nethermind.Crypto;
 using Nethermind.Logging;
+using Nethermind.Synchronization.Blocks;
 
 namespace Nethermind.Merge.Plugin.Synchronization;
 
@@ -28,7 +31,7 @@ public interface IChainLevelHelper
 {
     BlockHeader[] GetNextHeaders(int maxCount);
 
-    Block[] GetNextBlocks(int maxCount);
+    void SetNextBlocks(int maxCount, BlockDownloadContext context);
 }
 
 public class ChainLevelHelper : IChainLevelHelper
@@ -100,47 +103,20 @@ public class ChainLevelHelper : IChainLevelHelper
         return headers.ToArray();
     }
 
-    public Block[] GetNextBlocks(int maxCount)
+    public void SetNextBlocks(int maxCount, BlockDownloadContext context)
     {
-        long? startingPoint = GetStartingPoint();
-        if (startingPoint == null)
-            return null;
-        List<Block> blocks = new(maxCount);
-        int i = 1;
-        startingPoint++;
-        while (i < maxCount)
+        int offset = 0;
+        while (offset != context.NonEmptyBlockHashes.Count)
         {
-            ChainLevelInfo? level = _blockTree.FindLevel(startingPoint!.Value);
-            if (level == null || level.MainChainBlock == null)
+            IReadOnlyList<Keccak> hashesToRequest = context.GetHashesByOffset(offset, maxCount);
+            for (int i = 0; i < hashesToRequest.Count; i++)
             {
-                if (_logger.IsTrace) _logger.Trace($"ChainLevelHelper.GetNextBlocks - level {startingPoint} not found");
-                break;
+                Block? block = _blockTree.FindBlock(hashesToRequest[i], BlockTreeLookupOptions.None);
+                context.SetBlock(i + offset, block);
             }
 
-            BlockInfo blockInfo = level.MainChainBlock;
-
-            Block? newBlock = _blockTree.FindBlock(blockInfo.BlockHash);
-            if (newBlock == null)
-            {
-                if (_logger.IsTrace) _logger.Trace($"ChainLevelHelper - block {startingPoint} not found");
-                continue;
-            }
-
-            newBlock.Header.TotalDifficulty = blockInfo.TotalDifficulty == 0
-                ? null
-                : blockInfo.TotalDifficulty;
-            if (_logger.IsTrace)
-                _logger.Trace(
-                    $"ChainLevelHelper - A new block block {newBlock.ToString(Block.Format.FullHashAndNumber)}");
-            blocks.Add(newBlock);
-            ++i;
-            if (i >= maxCount)
-                break;
-
-            ++startingPoint;
+            offset += hashesToRequest.Count;
         }
-
-        return blocks.ToArray();
     }
 
     private long? GetStartingPoint()

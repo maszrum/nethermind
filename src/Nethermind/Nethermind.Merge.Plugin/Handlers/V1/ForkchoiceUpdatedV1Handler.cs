@@ -151,7 +151,7 @@ namespace Nethermind.Merge.Plugin.Handlers.V1
             }
 
             if (_poSSwitcher.TerminalTotalDifficulty == null ||
-                newHeadBlock!.Header.TotalDifficulty < _poSSwitcher.TerminalTotalDifficulty)
+                newHeadBlock.Header.TotalDifficulty < _poSSwitcher.TerminalTotalDifficulty)
             {
                 if (_logger.IsWarn)
                     _logger.Warn(
